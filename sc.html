@@ -58,20 +58,23 @@
       color: #333;
     }
     /* 合计行样式（页面显示） */
-    .total-row {
+    .daily-total-row {
       font-weight: bold;
       background-color: #e6f7ff;
     }
-    /* 标准产量输入框 */
+    /* 输入框样式 */
     .std-input {
       width: 80px;
       text-align: center;
+    }
+    .remark-input {
+      width: 120px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>生产明细表上传及日汇总生成</h1>
+    <h1>生产明细表上传及日汇总生成（按天合计）</h1>
     <div class="controls">
       <input type="file" id="fileInput" accept=".xlsx, .xls">
       <button id="exportBtn" class="button" disabled>导出汇总表</button>
@@ -80,15 +83,37 @@
   </div>
 
   <script>
-    // 全局变量，用于存储所有行的数据
+    // 全局数组，存储汇总后每行的数据
     let summaryArray = [];
+
+    // ========== 日期序列号转 YYYY-MM-DD ==========
+
+    function excelDateToJSDate(serial) {
+      // Excel 日期序号转换公式： (serial - 25569) * 86400 -> 与 1970-01-01 的秒数差
+      const utc_days  = Math.floor(serial - 25569);
+      const utc_value = utc_days * 86400; 
+      const date_info = new Date(utc_value * 1000);
+      const year  = date_info.getFullYear();
+      const month = String(date_info.getMonth() + 1).padStart(2, '0');
+      const day   = String(date_info.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function fixExcelDate(val) {
+      // 如果是数字，视为 Excel 序列号，需要转换
+      if (typeof val === 'number') {
+        return excelDateToJSDate(val);
+      } else {
+        // 若已是字符串，可直接返回，或自行格式化
+        return val;
+      }
+    }
 
     // 监听文件上传事件
     document.getElementById('fileInput').addEventListener('change', handleFile, false);
     // 导出按钮事件
     document.getElementById('exportBtn').addEventListener('click', exportTable, false);
 
-    // ========== 1. 读取Excel并生成页面上的日汇总表 ==========
     function handleFile(e) {
       var files = e.target.files;
       if (files.length === 0) return;
@@ -99,42 +124,37 @@
         var data = new Uint8Array(e.target.result);
         var workbook = XLSX.read(data, { type: 'array' });
         // 默认读取第一个工作表，如有需要可调整
-        var firstSheetName = workbook.SheetNames[0];
-        var worksheet = workbook.Sheets[firstSheetName];
-        // 将工作表转为 JSON 数组，注意 Excel 表中的列名需与下述对应
+       var targetSheetName = "印刷生产报表";  // 这里换成你要读取的表名
+       var worksheet = workbook.Sheets[targetSheetName];
+        // 将工作表转为 JSON 数组
         var jsonData = XLSX.utils.sheet_to_json(worksheet);
         generateDailySummary(jsonData);
       };
       reader.readAsArrayBuffer(file);
     }
 
+    // ========== 生成日汇总表（按天合计） ==========
     function generateDailySummary(data) {
-      // 按“机台号”、“班次”、“机长”、“型号”分组
+      // 用对象 groupedData 来分组，键为：日期 + 机台号 + 班次 + 机长 + 产品
       var groupedData = {};
 
       data.forEach(function(row) {
-        // 生产明细表中各字段对应关系：
-        // 机台：机台号
-        // 班次：班次
-        // 机长：机长
-        // 产品：型号
-        // 领料（米长）：米长(m)
-        // 宽幅：宽幅(mm)
-        // 产量（米长）：产出米长
-        // 产量（面积）：产出平方
+        // 读取并转换日期
+        var dateVal = fixExcelDate(row['日期'] || '');
         var machine = row['机台号'] || '';
-        var shift = row['班次'] || '';
-        var operator = row['机长'] || '';
+        var shift   = row['班次'] || '';
+        var operator= row['机长'] || '';
         var product = row['型号'] || '';
 
         // 跳过完全空行
-        if (!machine && !shift && !operator && !product) {
+        if (!dateVal && !machine && !shift && !operator && !product) {
           return;
         }
 
-        var key = machine + '_' + shift + '_' + operator + '_' + product;
+        var key = dateVal + '_' + machine + '_' + shift + '_' + operator + '_' + product;
         if (!groupedData[key]) {
           groupedData[key] = {
+            '日期': dateVal,
             '机台': machine,
             '班次': shift,
             '机长': operator,
@@ -143,28 +163,29 @@
             '宽幅': '',
             '产量（米长）': 0,
             '产量（面积）': 0,
-            // “机台&产品 要求标准产量（米长）”默认 0
-            '机台&产品 要求标准产量（米长）': 0,
+            '机台&产品 要求标准产量（米长）': 0, // 可编辑列
             '完成率': 'N/A',
             '完成情况': 'N/A',
             '损耗率': '',
-            '备注': ''
+            '备注': '' // 可编辑列
           };
         }
-        // 累加数值字段
+        // 累加领料、产量
         groupedData[key]['领料（米长）'] += Number(row['米长(m)']) || 0;
         groupedData[key]['产量（米长）'] += Number(row['产出米长']) || 0;
         groupedData[key]['产量（面积）'] += Number(row['产出平方']) || 0;
-        // 宽幅字段：若组内还未赋值且当前行存在数据，则记录（假设同组内宽幅一致）
+
+        // 宽幅：若还没赋值且本行有数据，则赋值
         if (!groupedData[key]['宽幅'] && row['宽幅(mm)']) {
           groupedData[key]['宽幅'] = row['宽幅(mm)'];
         }
       });
 
+      // 将分组结果转为数组
       summaryArray = [];
-      for (var key in groupedData) {
-        var item = groupedData[key];
-        // 先算一次损耗率
+      for (var k in groupedData) {
+        var item = groupedData[k];
+        // 初步计算损耗率
         if (item['领料（米长）'] > 0) {
           var lossRate = (1 - (item['产量（米长）'] / item['领料（米长）'])) * 100;
           item['损耗率'] = lossRate.toFixed(2) + '%';
@@ -174,87 +195,89 @@
         summaryArray.push(item);
       }
 
-      // 生成页面上的表格
-      var html = '<h2>日汇总表</h2>';
-      html += '<table id="summaryTable">';
-      // 表头
-      html += '<tr>';
-      html += '<th>机台</th>';
-      html += '<th>班次</th>';
-      html += '<th>机长</th>';
-      html += '<th>产品</th>';
-      html += '<th>领料（米长）</th>';
-      html += '<th>宽幅</th>';
-      html += '<th>产量（米长）</th>';
-      html += '<th>产量（面积）</th>';
-      html += '<th>机台&产品 要求标准产量（米长）</th>';
-      html += '<th>完成率</th>';
-      html += '<th>完成情况</th>';
-      html += '<th>损耗率</th>';
-      html += '<th>备注</th>';
-      html += '</tr>';
-
-      var totalLiao = 0;
-      var totalChan = 0;
-
-      summaryArray.forEach(function(item, index) {
-        totalLiao += item['领料（米长）'];
-        totalChan += item['产量（米长）'];
-
-        html += `<tr id="row-${index}">`;
-        html += `<td>${item['机台']}</td>`;
-        html += `<td>${item['班次']}</td>`;
-        html += `<td>${item['机长']}</td>`;
-        html += `<td>${item['产品']}</td>`;
-        html += `<td>${item['领料（米长）'].toFixed(2)}</td>`;
-        html += `<td>${item['宽幅']}</td>`;
-        html += `<td>${item['产量（米长）'].toFixed(2)}</td>`;
-        html += `<td>${item['产量（面积）'].toFixed(2)}</td>`;
-        // 标准产量输入框
-        html += `<td>
-          <input type="number" class="std-input" data-index="${index}" 
-                 min="0" step="1" value="${item['机台&产品 要求标准产量（米长）']}">
-        </td>`;
-        // 完成率、完成情况
-        html += `<td class="completion-rate">${item['完成率']}</td>`;
-        html += `<td class="completion-status">${item['完成情况']}</td>`;
-        // 损耗率
-        html += `<td>${item['损耗率']}</td>`;
-        html += `<td>${item['备注']}</td>`;
-        html += '</tr>';
+      // 按日期排序，让同一天的数据连续
+      summaryArray.sort(function(a, b) {
+        return new Date(a['日期']) - new Date(b['日期']);
       });
 
-      // 合计行
-      var totalLossRate = 'N/A';
-      if (totalLiao > 0) {
-        totalLossRate = ((1 - (totalChan / totalLiao)) * 100).toFixed(2) + '%';
+      // 生成表格 HTML
+      let html = '<h2>日汇总表</h2>';
+      html += '<table id="summaryTable">';
+      // 表头
+      html += `
+        <tr>
+          <th>日期</th>
+          <th>机台</th>
+          <th>班次</th>
+          <th>机长</th>
+          <th>产品</th>
+          <th>领料（米长）</th>
+          <th>宽幅</th>
+          <th>产量（米长）</th>
+          <th>产量（面积）</th>
+          <th>机台&产品 要求标准产量（米长）</th>
+          <th>完成率</th>
+          <th>完成情况</th>
+          <th>损耗率</th>
+          <th>备注</th>
+        </tr>
+      `;
+
+      // 我们要按“日期”分段，给每个日期做一个合计行
+      let currentDate = null;
+      let dailyLiao = 0, dailyChan = 0, dailyArea = 0; // 每日合计用
+      let startOfDay = true; // 标记是否是某天的第一条
+
+      for (let i = 0; i < summaryArray.length; i++) {
+        let item = summaryArray[i];
+        let thisDate = item['日期'];
+
+        // 如果换了新日期，则先输出前一个日期的合计行（若不是第一次）
+        if (currentDate !== thisDate) {
+          if (!startOfDay) {
+            // 输出上一天的合计行
+            html += buildDailyTotalRow(dailyLiao, dailyChan, dailyArea);
+          }
+          // 重置每日合计
+          dailyLiao = 0; 
+          dailyChan = 0;
+          dailyArea = 0;
+          currentDate = thisDate;
+          startOfDay = false;
+        }
+
+        // 累加当日合计
+        dailyLiao += item['领料（米长）'];
+        dailyChan += item['产量（米长）'];
+        dailyArea += item['产量（面积）'];
+
+        // 输出当前行
+        html += buildDataRow(item, i);
       }
-      html += '<tr class="total-row">';
-      html += '<td colspan="4" style="text-align:right;">合计</td>';
-      html += '<td>' + totalLiao.toFixed(2) + '</td>';
-      html += '<td></td>'; // 宽幅留空
-      html += '<td>' + totalChan.toFixed(2) + '</td>';
-      html += '<td></td>'; // 产量（面积）
-      html += '<td></td>'; // 标准产量
-      html += '<td></td>'; // 完成率
-      html += '<td></td>'; // 完成情况
-      html += '<td>' + totalLossRate + '</td>';
-      html += '<td></td>'; // 备注
-      html += '</tr>';
+
+      // 循环结束后，输出最后一天的合计行
+      if (!startOfDay) {
+        html += buildDailyTotalRow(dailyLiao, dailyChan, dailyArea);
+      }
 
       html += '</table>';
       document.getElementById('summary').innerHTML = html;
 
-      // 给每个标准产量输入框添加事件监听
-      var inputs = document.querySelectorAll('.std-input');
-      inputs.forEach(function(input) {
+      // 给“机台&产品 要求标准产量”输入框添加监听
+      document.querySelectorAll('.std-input').forEach(function(input) {
         input.addEventListener('input', function(e) {
-          var idx = parseInt(e.target.getAttribute('data-index'), 10);
-          var newValue = parseFloat(e.target.value) || 0;
-          // 更新 summaryArray 中的标准产量
+          let idx = parseInt(e.target.getAttribute('data-index'), 10);
+          let newValue = parseFloat(e.target.value) || 0;
           summaryArray[idx]['机台&产品 要求标准产量（米长）'] = newValue;
-          // 重新计算完成率和完成情况
           recalcRow(idx);
+        });
+      });
+
+      // 给“备注”输入框添加监听
+      document.querySelectorAll('.remark-input').forEach(function(input) {
+        input.addEventListener('input', function(e) {
+          let idx = parseInt(e.target.getAttribute('data-index'), 10);
+          summaryArray[idx]['备注'] = e.target.value;
         });
       });
 
@@ -262,50 +285,105 @@
       document.getElementById('exportBtn').disabled = false;
     }
 
-    // 重新计算指定行的完成率和完成情况
+    // ========== 构建“数据行”的 HTML ==========
+    function buildDataRow(item, index) {
+      return `
+        <tr id="row-${index}">
+          <td>${item['日期']}</td>
+          <td>${item['机台']}</td>
+          <td>${item['班次']}</td>
+          <td>${item['机长']}</td>
+          <td>${item['产品']}</td>
+          <td>${item['领料（米长）'].toFixed(2)}</td>
+          <td>${item['宽幅']}</td>
+          <td>${item['产量（米长）'].toFixed(2)}</td>
+          <td>${item['产量（面积）'].toFixed(2)}</td>
+          <td>
+            <input type="number" class="std-input" data-index="${index}"
+                   min="0" step="1" value="${item['机台&产品 要求标准产量（米长）']}">
+          </td>
+          <td class="completion-rate">${item['完成率']}</td>
+          <td class="completion-status">${item['完成情况']}</td>
+          <td>${item['损耗率']}</td>
+          <td>
+            <input type="text" class="remark-input" data-index="${index}"
+                   value="${item['备注']}">
+          </td>
+        </tr>
+      `;
+    }
+
+    // ========== 构建“当日合计行”的 HTML ==========
+    function buildDailyTotalRow(dailyLiao, dailyChan, dailyArea) {
+      let dailyLossRate = 'N/A';
+      if (dailyLiao > 0) {
+        dailyLossRate = ((1 - (dailyChan / dailyLiao)) * 100).toFixed(2) + '%';
+      }
+      // 按表头 14 列顺序：
+      // 日期 / 机台 / 班次 / 机长 / 产品 / 领料（米长） / 宽幅 / 产量（米长） / 产量（面积） / 标准产量 / 完成率 / 完成情况 / 损耗率 / 备注
+      return `
+        <tr class="daily-total-row">
+          <td>当日合计</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>${dailyLiao.toFixed(2)}</td>
+          <td></td>
+          <td>${dailyChan.toFixed(2)}</td>
+          <td>${dailyArea.toFixed(2)}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>${dailyLossRate}</td>
+          <td></td>
+        </tr>
+      `;
+    }
+
+    // ========== 当用户修改“标准产量”后，重新计算完成率和完成情况 ==========
     function recalcRow(index) {
-      var item = summaryArray[index];
-      var standardYield = item['机台&产品 要求标准产量（米长）'];
-      if (standardYield > 0) {
-        var completionRate = (item['产量（米长）'] / standardYield) * 100;
-        item['完成率'] = completionRate.toFixed(2) + '%';
-        item['完成情况'] = (completionRate < 100) ? '未完成' : '完成';
+      let item = summaryArray[index];
+      let std = item['机台&产品 要求标准产量（米长）'];
+      if (std > 0) {
+        let rate = (item['产量（米长）'] / std) * 100;
+        item['完成率'] = rate.toFixed(2) + '%';
+        item['完成情况'] = (rate < 100) ? '未完成' : '完成';
       } else {
         item['完成率'] = 'N/A';
         item['完成情况'] = 'N/A';
       }
-      // 更新页面对应单元格
-      var row = document.getElementById('row-' + index);
+      // 更新页面
+      let row = document.getElementById('row-' + index);
       if (row) {
         row.querySelector('.completion-rate').textContent = item['完成率'];
         row.querySelector('.completion-status').textContent = item['完成情况'];
       }
     }
 
-    // ========== 2. 导出 Excel：将 <input> 替换为文本，才能正常导出其值 ==========
+    // ========== 导出 Excel：将 <input> 的值替换为文本，才能正常导出其值 ==========
     function exportTable() {
-      var originalTable = document.getElementById('summaryTable');
+      let originalTable = document.getElementById('summaryTable');
       if (!originalTable) {
         alert("请先生成汇总表！");
         return;
       }
-
-      // 1) 克隆原表，避免修改到页面上的真实表格
-      var cloneTable = originalTable.cloneNode(true);
-
-      // 2) 在克隆表里，将每个 <input> 的 value 替换为纯文本
-      var cloneInputs = cloneTable.querySelectorAll('input.std-input');
-      cloneInputs.forEach(function(input) {
-        var val = input.value;
-        var td = input.parentNode; // input 所在的 <td>
-        td.removeChild(input);     // 移除 <input>
-        td.textContent = val;      // 用数字文本替换
+      // 1) 克隆表
+      let cloneTable = originalTable.cloneNode(true);
+      // 2) 将克隆表里的 <input> 转换为文本
+      cloneTable.querySelectorAll('.std-input, .remark-input').forEach(function(input) {
+        let val = input.value;
+        let td = input.parentNode;
+        td.removeChild(input);
+        td.textContent = val;
       });
-
-      // 3) 用克隆表导出
-      var workbook = XLSX.utils.table_to_book(cloneTable, { sheet: "汇总表" });
-      XLSX.writeFile(workbook, "日汇总表.xlsx");
-    }
+      // 3) 生成并下载 Excel
+  let wb = XLSX.utils.table_to_book(cloneTable, {
+    sheet: "汇总表",
+    raw: true
+  });
+  XLSX.writeFile(wb, "日汇总表.xlsx");
+}
   </script>
 </body>
 </html>
