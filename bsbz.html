@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>查询页面</title>
+  <style>
+    /* 页面基础样式 */
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: 20px;
+      background-color: #f2f6fc;
+    }
+    .container {
+      /* 自适应宽度：小屏下收缩，大屏上限1600px */
+      width: 90%;
+      max-width: 1600px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    }
+    .query-section {
+      margin-bottom: 20px;
+    }
+    .el-input {
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 14px;
+      width: 300px;
+    }
+    .el-button {
+      border: 1px solid #409EFF;
+      border-radius: 4px;
+      background-color: #409EFF;
+      color: #fff;
+      padding: 9px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-left: 10px;
+    }
+    .el-button:hover {
+      background-color: #66b1ff;
+    }
+
+    /* 固定高度、可滚动容器 */
+    .table-wrapper {
+      max-height: 670px;
+      overflow-y: auto;
+      overflow-x: auto;
+    }
+    /* 自定义滚动条(仅在 WebKit 内核浏览器有效) */
+    .table-wrapper::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .table-wrapper::-webkit-scrollbar-track {
+      background: #f2f6fc;
+    }
+    .table-wrapper::-webkit-scrollbar-thumb {
+      background-color: #c1c1c1;
+      border-radius: 4px;
+    }
+
+    .el-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      /* 如果想让列宽严格按 th 的 width 设置，可以加上
+         table-layout: fixed; 并确保每列都写了宽度 */
+    }
+    .el-table th,
+    .el-table td {
+      border: 1px solid #ebeef5;
+      padding: 12px;
+      text-align: left;
+      vertical-align: middle; /* 让内容居中对齐（上下） */
+    }
+    /* 表头固定 + 加粗 */
+    .el-table thead th {
+      background-color: #f5f7fa;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    /* 行 hover 高亮 */
+    .el-table tbody tr:hover {
+      background-color: #f9f9f9;
+    }
+
+    /* 搜索关键词高亮 */
+    .highlight {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 查询条件区域 -->
+    <div class="query-section">
+      <input type="text" class="el-input" placeholder="请输入类型查询关键字">
+      <button class="el-button" onclick="filterTable()">查询</button>
+      <button class="el-button" onclick="clearQuery()">清除</button>
+    </div>
+
+    <!-- 固定高度、可滚动容器 -->
+    <div class="table-wrapper">
+      <table class="el-table">
+        <thead>
+          <tr>
+            <th style="width:50px;">工序</th>
+            <th style="width:400px;">类型</th>
+            <th style="width:180px;">单价</th>
+            <th style="width:140px;">备注1</th>
+            <th style="width:140px;">备注2</th>
+          </tr>
+        </thead>
+        <tbody>
+<tr>
+<td>生产</td>
+<td>无机（20kg/25kg/30kg/35kg）</td>
+<td>25元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>充包</td>
+<td>25元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>FTC</td>
+<td>25元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>水泥基砂浆</td>
+<td>25元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>石膏基砂浆</td>
+<td>25元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>粉刷石膏</td>
+<td>25元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>聚苯颗粒（粉料）</td>
+<td>25元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>25kg套包30kg</td>
+<td>15元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>5cm免拆模板</td>
+<td></td>
+<td> 0.18m³/片</td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>10cm免拆模板</td>
+<td></td>
+<td>0.36m³/片</td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>回炉按原生产计算</td>
+<td>筛水泥12元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>墙面</td>
+<td>25元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>地面</td>
+<td>25元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>修补</td>
+<td>12元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>砂浆（抹面、粘结、界面、黑细/白细腻子、防水、抗裂、找平）</td>
+<td>12元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>干膏料</td>
+<td>25元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>水泥</td>
+<td>12元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>锚固钉、钉子（1000套=1包）</td>
+<td>0.5元/包</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>网格布（1包4卷）</td>
+<td>0.5元/包</td>
+<td> 总价：卷数/4*单价</td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>废袋</td>
+<td>0.03元/只</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>生产</td>
+<td>做检测材料</td>
+<td>1元/包</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>下货</td>
+<td>卸砂</td>
+<td>2元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>下货</td>
+<td>集装箱卸砂</td>
+<td>8元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>下货</td>
+<td>其他下货（老粉、水泥、石膏粉、灰钙粉、生钙...）</td>
+<td>2元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>下货</td>
+<td>下珍珠岩</td>
+<td>0.19元/包</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>下货</td>
+<td>3001c</td>
+<td>3元/T</td>
+<td> 原材料</td>
+<td> </td>
+</tr>
+<tr>
+<td>下货</td>
+<td>工地下货</td>
+<td>15元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>下货</td>
+<td>纤维</td>
+<td>2元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>下货</td>
+<td>B料</td>
+<td>2元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>下货</td>
+<td>胶粉</td>
+<td>2元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>下货</td>
+<td>下袋子</td>
+<td>0.5元/捆</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>下货</td>
+<td>卸钉子</td>
+<td>0.5元/箱</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>装货</td>
+<td>上车（除保温板）</td>
+<td>5元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>装货</td>
+<td>人工</td>
+<td>5元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<td>装货</td>
+<td>阳角条</td>
+<td>0.5元/包</td>
+<td>根不算钱</td>
+<td> </td>
+</tr>
+<tr>
+<td>装货</td>
+<td>装车（保温板/石墨板）</td>
+<td>4元/m³</td>
+<td>60cm*60cm*厚度/1000000</td>
+<td>2cm  12片<br/>3cm  8片<br/>4cm  6片<br/>4.5cm  6片<br/>3.5cm  7片<br/>5cm  5片<br/>6cm  4片<br/>7cm  3片<br/>8cm  3片</td>
+</tr>
+<tr>
+<td>装货</td>
+<td>废料加工</td>
+<td>245元/T；20元/包</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>装货</td>
+<td>锚固钉、钉子（1000套=1包）</td>
+<td>0.5元/包</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>装货</td>
+<td>吊带装车</td>
+<td>3元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>装货</td>
+<td>真空板</td>
+<td>0.5/箱</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>装货</td>
+<td>阳角条</td>
+<td> </td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>脱模</td>
+<td>杨忠山车间膜箱（脱膜）</td>
+<td>4.5元/只<br/>大：10元/只</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>脱模</td>
+<td>生产（生产白板）</td>
+<td>小：9元/只或箱<br/>大：20元/只或箱</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>切割</td>
+<td>王会新车间切割</td>
+<td>12元/m³</td>
+<td>60cm*60cm*厚度/1000000</td>
+<td>2cm  12片<br/>3cm  8片<br/>4cm  6片<br/>4.5cm  6片<br/>3.5cm  7片<br/>5cm  5片<br/>6cm  4片<br/>7cm  3片<br/>8cm  3片</td>
+</tr>
+<tr>
+<td>切割</td>
+<td>王会新车间切割</td>
+<td>如果没写（多少立方），只写了片，就记时</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>复合板</td>
+<td>装车</td>
+<td>2元/托</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>复合板</td>
+<td>下石膏板</td>
+<td>2元/托</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>复合板</td>
+<td>复合（挤塑板、石膏板、水泥板）</td>
+<td>1.5元/片</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>复合板</td>
+<td>翻板</td>
+<td>0.5元/片</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>复合板</td>
+<td>下挤塑板（70立方）</td>
+<td>140/车</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>膏料</td>
+<td>膏料生产</td>
+<td>50元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>膏料</td>
+<td>装车</td>
+<td>5元/T</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>膏料</td>
+<td>女工</td>
+<td>按90%计件</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>珍珠岩板</td>
+<td>3cm-6cm</td>
+<td>45元/m³</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>珍珠岩板</td>
+<td>装车</td>
+<td>6元/m³</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>计时</td>
+<td>男</td>
+<td>150元/8小时</td>
+<td>18.75/h</td>
+<td> </td>
+</tr>
+<tr>
+<td>计时</td>
+<td>女</td>
+<td>120元/8小时</td>
+<td>15/h</td>
+<td> </td>
+</tr>
+<tr>
+<td>计时</td>
+<td>晚上12点-凌晨4点</td>
+<td>5元补助总共</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>计时</td>
+<td></td>
+<td>人数*时间/总人数</td>
+<td>写了名字的给对应人，没写则平分</td>
+<td> </td>
+</tr>
+<tr>
+<td>计时</td>
+<td>文家荣、谭长国</td>
+<td>22/小时</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>计时</td>
+<td>韦钟兵</td>
+<td>177/8小时，加班部分按150/8小时算</td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td>计时</td>
+<td>谢代强、张洪梅、卢家顺、赵路琴、邵继明、岳文成、李梦男、戴亚楠、周昌全、张果果</td>
+<td>23/小时</td>
+<td> </td>
+<td> </td>
+</tr>
+          <!-- 根据需要继续添加数据行 -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    //============================
+    //  1. 合并第一列相同单元格
+    //============================
+    function mergeCells() {
+      const tbody = document.querySelector('.el-table tbody');
+      // 只处理可见行
+      const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => {
+        return window.getComputedStyle(row).display !== 'none';
+      });
+      let prevCell = null;
+      let rowspan = 1;
+      rows.forEach(function(row) {
+        let cell = row.querySelector('td:nth-child(1)');
+        if (prevCell && cell.textContent.trim() === prevCell.textContent.trim()) {
+          rowspan++;
+          prevCell.rowSpan = rowspan;
+          cell.style.display = 'none';
+        } else {
+          prevCell = cell;
+          rowspan = 1;
+        }
+      });
+    }
+
+    //============================
+    //  2. 关键词高亮
+    //============================
+    function highlightKeyword(originalText, keyword) {
+      if (!keyword) return originalText; // 关键字为空，不做处理
+      // 使用正则匹配，不区分大小写
+      const reg = new RegExp(`(${keyword})`, 'gi');
+      // 将匹配到的部分用 <span class="highlight"> 包裹
+      return originalText.replace(reg, `<span class="highlight">$1</span>`);
+    }
+
+    //============================
+    //  3. 显示 / 移除 “暂无数据” 行
+    //============================
+    function showNoDataRow() {
+      const tbody = document.querySelector('.el-table tbody');
+      // 如果已经有“暂无数据”行，就不再重复添加
+      if (!document.querySelector('.no-data-row')) {
+        const noDataRow = document.createElement('tr');
+        noDataRow.classList.add('no-data-row');
+        noDataRow.innerHTML = `
+          <td colspan="5" style="text-align:center; color:#999;">暂无数据</td>
+        `;
+        tbody.appendChild(noDataRow);
+      }
+    }
+    function removeNoDataRow() {
+      const noDataRow = document.querySelector('.no-data-row');
+      if (noDataRow) {
+        noDataRow.remove();
+      }
+    }
+
+    //============================
+    //  4. 搜索函数：模糊匹配“类型”列 + 关键词高亮
+    //============================
+    window.filterTable = function() {
+      const input = document.querySelector('.el-input');
+      const keyword = input.value.trim().toLowerCase();
+      const tableRows = document.querySelectorAll('.el-table tbody tr');
+
+      // 先移除“暂无数据”行
+      removeNoDataRow();
+
+      // 恢复所有行显示，并还原“类型”列文本
+      tableRows.forEach(function(row) {
+        row.style.display = '';
+        const firstCell = row.querySelector('td:nth-child(1)');
+        firstCell.style.display = '';
+        firstCell.removeAttribute('rowspan');
+
+        // 恢复“类型”列的原始文本
+        const typeCell = row.querySelector('td:nth-child(2)');
+        if (!typeCell.dataset.originalText) {
+          // 首次存一下原始文本
+          typeCell.dataset.originalText = typeCell.textContent;
+        } else {
+          // 如果之前存过，先还原
+          typeCell.innerHTML = typeCell.dataset.originalText;
+        }
+      });
+
+      // 过滤数据 + 关键词高亮
+      let visibleCount = 0;
+      tableRows.forEach(function(row) {
+        const typeCell = row.querySelector('td:nth-child(2)');
+        const originalText = typeCell.dataset.originalText || '';
+        const lowerText = originalText.trim().toLowerCase();
+
+        // 如果关键字不为空，且不包含，则隐藏该行
+        if (keyword !== '' && !lowerText.includes(keyword)) {
+          row.style.display = 'none';
+        } else {
+          // 否则高亮关键字
+          const highlighted = highlightKeyword(originalText, keyword);
+          typeCell.innerHTML = highlighted;
+          visibleCount++;
+        }
+      });
+
+      // 如果一条都没显示，则插入“暂无数据”
+      if (visibleCount === 0) {
+        showNoDataRow();
+      }
+
+      // 最后重新合并单元格
+      mergeCells();
+    };
+
+    //============================
+    //  5. 清除搜索条件
+    //============================
+    window.clearQuery = function() {
+      const input = document.querySelector('.el-input');
+      input.value = '';
+      const tableRows = document.querySelectorAll('.el-table tbody tr');
+
+      removeNoDataRow(); // 移除“暂无数据”行
+
+      // 恢复所有行显示，并还原“类型”列文本
+      tableRows.forEach(function(row) {
+        row.style.display = '';
+        const firstCell = row.querySelector('td:nth-child(1)');
+        firstCell.style.display = '';
+        firstCell.removeAttribute('rowspan');
+
+        // 还原“类型”列文本
+        const typeCell = row.querySelector('td:nth-child(2)');
+        if (typeCell.dataset.originalText) {
+          typeCell.innerHTML = typeCell.dataset.originalText;
+        }
+      });
+      mergeCells();
+    };
+
+    //============================
+    //  6. 回车键触发查询
+    //============================
+    document.querySelector('.el-input').addEventListener('keyup', function(event) {
+      if (event.key === "Enter") {
+        filterTable();
+      }
+    });
+
+    //============================
+    //  7. 页面加载后先合并一次
+    //============================
+    document.addEventListener('DOMContentLoaded', function() {
+      mergeCells();
+    });
+  </script>
+</body>
+</html>
