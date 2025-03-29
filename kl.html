@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>抗拉承载力输入表</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f9f9f9;
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      background-color: #fff;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 12px;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    input {
+      width: 80%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 20px;
+    }
+    .result-box {
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      background-color: #fff;
+      width: 200px;
+    }
+    .clear-button {
+      margin-top: 40px;
+      background-color: #ff8c00;
+      color: white;
+      font-size: 18px;
+      padding: 15px 40px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .clear-button:hover {
+      background-color: #ff7000;
+    }
+  </style>
+</head>
+<body>
+  <h2 style="text-align: center;">抗拉承载力输入表</h2>
+  
+  <div class="container" id="tables-container"></div>
+  
+  <script>
+    function createTable(start, end) {
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      const tbody = document.createElement('tbody');
+
+      thead.innerHTML = `
+        <tr>
+          <th>试样编号</th>
+          <th>抗拉承载力 (N)</th>
+        </tr>
+      `;
+
+      for (let i = start; i <= end; i++) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>样品 ${i}</td>
+          <td><input type="number" placeholder="请输入数值" class="input-value" /></td>
+        `;
+        tbody.appendChild(row);
+      }
+
+      table.appendChild(thead);
+      table.appendChild(tbody);
+      document.getElementById('tables-container').appendChild(table);
+    }
+
+    createTable(1, 5);
+    createTable(6, 10);
+    createTable(11, 15);
+  </script>
+
+  <div class="button-container">
+    <div class="result-box">
+      <button onclick="calculateAverage()">计算平均值</button>
+      <p id="average-result">抗拉承载力平均值：-</p>
+    </div>
+    <div class="result-box">
+      <button onclick="calculateStdDev()">计算标准偏差</button>
+      <p id="std-dev-result">破坏荷载标准偏差值：-</p>
+    </div>
+    <div class="result-box">
+      <button onclick="calculateCoefficientOfVariation()">计算变异系数</button>
+      <p id="cov-result">变异系数：-</p>
+    </div>
+    <div class="result-box">
+      <button onclick="calculateF5()">计算 F5%/KN</button>
+      <p id="f5-result">F5%/KN：-</p>
+    </div>
+  </div>
+
+  <div style="text-align: center;">
+    <button class="clear-button" onclick="clearAll()">清除所有数据</button>
+  </div>
+
+  <script>
+    let lastAverage = 0;
+    let lastStdDev = 0;
+    let lastCoefficientOfVariation = 0;
+
+    function calculateAverage() {
+      const inputs = document.querySelectorAll('.input-value');
+      let values = [];
+      let sum = 0;
+      
+      inputs.forEach(input => {
+        const value = parseFloat(input.value);
+        if (!isNaN(value)) {
+          values.push(value);
+          sum += value;
+        }
+      });
+
+      const count = values.length;
+      if (count === 0) {
+        document.getElementById('average-result').innerText = '抗拉承载力平均值：0 N';
+        return;
+      }
+
+      const average = sum / count;
+      lastAverage = average;
+      document.getElementById('average-result').innerText = `抗拉承载力平均值：${average} N`;
+    }
+
+    function clearAll() {
+      document.querySelectorAll('.input-value').forEach(input => input.value = '');
+      document.getElementById('average-result').innerText = '抗拉承载力平均值：-';
+      document.getElementById('std-dev-result').innerText = '破坏荷载标准偏差值：-';
+      document.getElementById('cov-result').innerText = '变异系数：-';
+      document.getElementById('f5-result').innerText = 'F5%/KN：-';
+      lastAverage = 0;
+      lastStdDev = 0;
+      lastCoefficientOfVariation = 0;
+    }
+  </script>
+</body>
+</html>
