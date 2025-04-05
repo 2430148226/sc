@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>月度生产发货报表</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    /* 页面和容器基本样式 */
+    body {
+      font-family: "Microsoft YaHei", sans-serif;
+      background-color: #f2f4f8;
+      margin: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 40px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    /* 按钮组样式 */
+    .button-group {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+    .button-group label {
+      background-color: #3498db;
+      color: #fff;
+      padding: 8px 16px;
+      margin-left: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    /* 固定数据表格样式 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #f5f7fa;
+    }
+    tr:nth-child(even) {
+      background-color: #fbfcfd;
+    }
+    tr:hover {
+      background-color: #f1f8ff;
+    }
+    /* 未匹配数据展示区域样式 */
+    #unmatched-div {
+      margin-top: 40px;
+      padding: 10px;
+      border: 1px dashed #999;
+    }
+    #unmatched-div h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: #e74c3c;
+    }
+  </style>
+</head>
+<body onload="console.log('页面加载完成')">
+  <div class="container">
+    <!-- 文件上传按钮 -->
+    <div class="button-group">
+      <label for="input-production">导入入库单</label>
+      <input type="file" id="input-production" accept=".xlsx,.xls">
+      <label for="input-shipment">导入发货单</label>
+      <input type="file" id="input-shipment" accept=".xlsx,.xls">
+    </div>
+
+    <h1>2025年3月份生产发货报表 (最终匹配版)</h1>
+    
+    <!-- 固定数据表格 -->
+    <table id="data-table">
+      <thead>
+        <tr>
+          <th>车间</th>
+          <th>产品名称</th>
+          <th>单位</th>
+          <th>生产量</th>
+          <th>发货量</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- 示例固定数据（请根据实际报表填写） -->
+        <tr>
+          <td rowspan="7">砂浆车间</td>
+          <td>无机类</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>FTC</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>胶粉聚苯颗粒</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>石膏类</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>砂浆类</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>膏料（干）</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>腻子类</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td rowspan="1">膏料</td>
+          <td>膏料</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td rowspan="7">涂料</td>
+          <td>其他涂料</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>抗碱底漆</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>乳胶漆</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>多彩涂料</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>真石漆</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>质感</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>弹性平涂</td>
+          <td>吨</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td rowspan="6">复合板</td>
+          <td>挤塑板+石膏板</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>EPS板+石膏板</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>挤塑板+水泥板</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>EPS板+水泥板</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>岩棉板+石膏板</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>热固板+硅酸钙板</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td rowspan="2">石墨不燃板</td>
+          <td>白颗粒</td>
+          <td>立方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>黑颗粒</td>
+          <td>立方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td rowspan="3">真金板</td>
+          <td>真金板</td>
+          <td>立方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>033级</td>
+          <td>立方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>039级</td>
+          <td>立方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td rowspan="7">一体板</td>
+          <td>真石漆饰面</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>弹性平涂</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>金属漆</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>水包水饰面</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>水包砂饰面</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>乳胶漆饰面</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>无饰面</td>
+          <td>平方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td rowspan="3">免拆模板</td>
+          <td>10cm</td>
+          <td>立方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>5cm</td>
+          <td>立方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>4cm</td>
+          <td>立方</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td rowspan="1">挤塑板</td>
+          <td>挤塑板</td>
+          <td>立方</td>
+          <td></td>
+          <td></td>
+        </tr>
+       <tr>
+          <td rowspan="1">无机轻集料</td>
+          <td>无机轻集料</td>
+          <td>立方</td>
+          <td></td>
+          <td></td>
+        </tr>
+       <tr>
+          <td rowspan="5">线条</td>
+          <td>EPS线条</td>
+          <td>米</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>EPS裸线条</td>
+          <td>米</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>A级线条</td>
+          <td>米</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>石墨EPS线条</td>
+          <td>米</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>EPS线条</td>
+          <td>根</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <!-- 其他固定数据行…… -->
+      </tbody>
+    </table>
+
+    <!-- 未匹配数据展示区域 -->
+    <div id="unmatched-div">
+      <h2 id="unmatched-title">未匹配的数据</h2>
+      <div id="unmatched-table"></div>
+    </div>
+  </div>
+
+  <script>
+    /*************** 1. 特殊情况设置 ***************/
+    // specialRules 对象：统一维护需要排除的特殊情况
+    // 这里新增了“无机类”的特殊排除规则，排除【商品名称】中包含“水泥基无机保温砂浆试块”
+    const specialRules = {
+      "砂浆类": {
+        exclusions: ["水泥基无机保温砂浆", "胶粉聚苯颗粒保温砂浆", "水泥基无机保温砂浆试块"]
+      },
+      "膏料": {
+        exclusions: ["无机保温膏料（干）"]
+      },
+      "无机类": {
+        exclusions: ["水泥基无机保温砂浆试块"]
+      }
+    };
+
+    /*************** 2. 标准化函数 ***************/
+    function normalize(str) {
+      return str.toString().toLowerCase().trim()
+                .replace(/\s+/g, '')
+                .replace(/[^\u4e00-\u9fa5a-z0-9]/g, '');
+    }
+
+    /*************** 3. 固定数据表格填充函数 ***************/
+    function fillTable(resultMap, type) {
+      const rows = document.querySelectorAll("#data-table tbody tr");
+      rows.forEach(function(row, rowIndex) {
+        const cells = row.querySelectorAll("td");
+        let pname, prodIndex, shipIndex;
+        if (cells.length === 5) {
+          // 正常行：[车间, 产品名称, 单位, 生产量, 发货量]
+          pname = normalize(cells[1].innerText);
+          prodIndex = 3;
+          shipIndex = 4;
+        } else if (cells.length === 4) {
+          // 合并行：[产品名称, 单位, 生产量, 发货量]（车间由上一行合并）
+          pname = normalize(cells[0].innerText);
+          prodIndex = 2;
+          shipIndex = 3;
+        } else {
+          console.log(`第${rowIndex+1}行单元格数量异常：`, cells.length);
+          return;
+        }
+        console.log(`第${rowIndex+1}行固定产品名称标准化后：`, pname);
+        if (resultMap[pname] !== undefined) {
+          if (type === "生产量") {
+            cells[prodIndex].innerText = resultMap[pname]["生产量"].toFixed(2);
+            cells[prodIndex].style.color = "red";
+          }
+          if (type === "发货量") {
+            cells[shipIndex].innerText = resultMap[pname]["发货量"].toFixed(2);
+            cells[shipIndex].style.color = "red";
+          }
+          console.log(`第${rowIndex+1}行产品 [${cells.length === 5 ? cells[1].innerText : cells[0].innerText}] 匹配到键 [${pname}] ->`, resultMap[pname]);
+        } else {
+          console.log(`第${rowIndex+1}行产品 [${cells.length === 5 ? cells[1].innerText : cells[0].innerText}] 未匹配到任何结果。`);
+        }
+      });
+    }
+
+    /*************** 4. 未匹配数据展示函数 ***************/
+    // 显示所有未匹配数据的所有字段（取所有记录的键的并集），空值显示为 "/"
+    function displayUnmatchedRows(unmatchedRows, type) {
+      let headerText = (type === "生产量") ? "未匹配的入库数据" : "未匹配的发货数据";
+      document.getElementById("unmatched-title").innerText = headerText;
+      
+      if (unmatchedRows.length === 0) {
+        document.getElementById("unmatched-table").innerHTML = "<p>无未匹配数据。</p>";
+        return;
+      }
+      
+      // 获取所有未匹配记录的所有字段（并集）
+      const allFieldsSet = new Set();
+      unmatchedRows.forEach(function(row) {
+        Object.keys(row).forEach(function(key) {
+          allFieldsSet.add(key);
+        });
+      });
+      const fields = Array.from(allFieldsSet);
+      
+      let html = "<table style='width:100%; border-collapse: collapse; font-size: 15px;'>";
+      // 表头
+      html += "<thead><tr>";
+      fields.forEach(function(field) {
+        html += "<th>" + field + "</th>";
+      });
+      html += "</tr></thead>";
+      // 表体
+      html += "<tbody>";
+      unmatchedRows.forEach(function(row) {
+        html += "<tr>";
+        fields.forEach(function(field) {
+          let value = row[field];
+          if (!value || value === "") {
+            value = "/";
+          }
+          html += "<td>" + value + "</td>";
+        });
+        html += "</tr>";
+      });
+      html += "</tbody></table>";
+      document.getElementById("unmatched-table").innerHTML = html;
+    }
+
+    /*************** 5. 匹配规则定义 ***************/
+    // 每个规则都指定 field 属性，决定使用哪一列进行匹配
+    const mapping = [
+      { key: "无机类", field: "商品名称", keywords: ["无机保温砂浆"] },
+      { key: "FTC", field: "商品名称", keywords: ["FTC"] },
+      { key: "胶粉聚苯颗粒", field: "商品名称", keywords: ["胶粉聚苯颗粒"] },
+      { key: "砂浆类", field: "商品名称", keywords: ["胶粘剂", "js粉料", "砂浆", "胶浆"] },
+      { key: "膏料（干）", field: "商品名称", keywords: ["膏料（干）"] },
+      { key: "腻子类", field: "商品名称", keywords: ["腻子"] },
+      { key: "膏料", field: "商品名称", keywords: ["膏料"] },
+      { key: "其他涂料", field: "商品名称", keywords: ["涂料", "界面剂"] },
+      { key: "挤塑板+石膏板", field: "规格型号", keywords: ["挤塑板+石膏板"] },
+      { key: "挤塑板+水泥板", field: "规格型号", keywords: ["挤塑板+水泥板"] },
+      { key: "白颗粒", field: "商品名称", keywords: ["热固复合聚苯乙烯泡沫保温板"] },
+      { key: "黑颗粒", field: "商品名称", keywords: ["无机改性石墨不燃保温板"] },
+      { key: "真石漆饰面", field: "规格型号", keywords: ["真石漆"] },
+      { key: "10cm", field: "规格型号", keywords: ["3000*1200*100"] },
+      { key: "5cm", field: "规格型号", keywords: ["3000*1200*50"] },
+      { key: "033级", field: "商品名称", keywords: ["033级"] },
+      { key: "039级", field: "商品名称", keywords: ["039级"] },
+      { key: "无饰面", field: "规格型号", keywords: ["无饰面"] }
+    ];
+
+    /*************** 6. 导入数据处理及匹配逻辑 ***************/
+    function handleExcelImport(event, type) {
+      const file = event.target.files[0];
+      if (!file) return;
+      console.log("选择的文件:", file.name);
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet);
+        console.log("读取到的Excel内容:", json);
+        const resultMap = {};
+        const unmatchedRows = [];
+        
+        // 使用普通 for 循环，便于跳出内层循环
+        for (let i = 0; i < json.length; i++) {
+          const row = json[i];
+          let matched = false;
+          for (let j = 0; j < mapping.length; j++) {
+            const rule = mapping[j];
+            // 根据 rule.field 获取数据（例如：对于“无饰面”，使用规格型号字段）
+            const raw = normalize(row[rule.field] || "");
+            let ruleMatched = false;
+            for (let k = 0; k < rule.keywords.length; k++) {
+              const kw = normalize(rule.keywords[k]);
+              // 检查特殊排除条件
+              if (specialRules[rule.key] && specialRules[rule.key].exclusions) {
+                let exclude = false;
+                for (let m = 0; m < specialRules[rule.key].exclusions.length; m++) {
+                  const exKey = normalize(specialRules[rule.key].exclusions[m]);
+                  if (raw.indexOf(exKey) !== -1) {
+                    exclude = true;
+                    break;
+                  }
+                }
+                if (exclude) continue; // 跳过当前关键词
+              }
+              if (raw.indexOf(kw) !== -1) {
+                ruleMatched = true;
+                break; // 当前规则匹配成功，跳出关键词循环
+              }
+            }
+            if (ruleMatched) {
+              const normKey = normalize(rule.key);
+              if (!resultMap[normKey]) {
+                resultMap[normKey] = { 生产量: 0, 发货量: 0 };
+              }
+              resultMap[normKey][type] += parseFloat(row["数量"]) || 0;
+              matched = true;
+              break; // 当前记录只匹配一次，跳出规则循环
+            }
+          }
+          if (!matched) {
+            unmatchedRows.push(row);
+          }
+        }
+        console.log("匹配后的结果:", resultMap);
+        fillTable(resultMap, type);
+        displayUnmatchedRows(unmatchedRows, type);
+        alert("导入完成，请查看控制台日志和未匹配数据表。");
+      };
+      reader.onerror = function(e) {
+        console.error("文件读取出错:", e);
+        alert("文件读取出错");
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    /*************** 7. 事件绑定 ***************/
+    document.getElementById("input-production").addEventListener("change", function(e) {
+      handleExcelImport(e, "生产量");
+    });
+    document.getElementById("input-shipment").addEventListener("change", function(e) {
+      handleExcelImport(e, "发货量");
+    });
+  </script>
+</body>
+</html>
